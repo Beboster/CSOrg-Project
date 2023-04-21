@@ -52,3 +52,82 @@ void decryptData_01(char* data, int sized)
 
     return;
 }
+
+void decryptData_02(char* data, int sized)
+{
+    __asm {
+
+        xor eax, eax // variable
+        xor edx, edx // variable
+        xor ecx, ecx // index
+        xor ebx, ebx // counter 
+        xor esi, esi
+        xor edi, edi
+
+        //gPasswordHash[0]
+        lea esi, gPasswordHash
+        mov al, byte ptr[esi + 0]
+
+        //gPasswordHash[0] * 256
+        shl ax, 8
+
+        //gPasswordHash[1]
+        mov cl, byte ptr[esi + 1]
+
+        //gPasswordHash[0] + gPasswordHash[1] == index == eax
+        add ax, cx
+
+        //Clear registers
+        xor esi, esi
+        xor edx, edx
+        xor ecx, ecx
+        xor edi, edi
+
+        mov ebx, 0
+        //ecx == sized
+        mov ecx, sized
+
+        mov edi, data
+        mov esi, gptrKey
+
+        loop1 :
+        //data[x]
+        mov dl, byte ptr[edi + ebx]
+            //data[x]^gkey[index]
+            xor dl, byte ptr[esi + eax]
+            //data[x]=(dl)
+            mov byte ptr[edi + ebx], dl
+
+            //part a of AECDB crypto order
+            xor ecx, ecx            //Temp 0 size
+            lea ecx, gEncodeTable        //ecx = gdc
+            mov dl, byte ptr[ecx + edx]    //dl = gDecodeTabe[edx]
+
+            //part e of AECDB crypto order
+            rol dl, 3 // rotate 2 bits right
+
+            //part c of AECDB crypto order
+            mov dh, dl            //Copy dl to dh
+            and dl, 11110000b        //Seperate 4 bytes
+            and dh, 00001111b        //Seperate other 4 bytes
+            stc                //Set the carry flag
+            rcl dl, 6            //Move to the begining of the 8 bytes then rotate 1 more
+            and dl, 11110000b        //clear the top 4 bytes
+            rol dh, 1            //Rotate 1 left for other digit
+            add dl, dh            //Add the digits together
+            xor dh, dh            //Clear the top of the register
+
+            //part d of AECDB crypto order
+            xor dl, 0x62 //invert bits 0,2,4,7
+
+            //part b of AECDB crypto order
+            rcl dl, 4            //reverse bytes
+
+            //x++
+            inc ebx
+            cmp ebx, ecx
+            jnz loop1
+    }
+
+    return;
+}
