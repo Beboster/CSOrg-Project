@@ -5,9 +5,6 @@ xor eax, eax
        // lea esi, gPasswordHash
         mov esi, gptrPasswordHash
 
-
-
-
         //set eax to 0
         
         //store the first value of the password array into al
@@ -23,9 +20,7 @@ xor eax, eax
         //ax = staring_index
 
         add al, cl
-
-
-
+        
         //set ebx to 0
         //ebx is the variable of the loop
         xor ebx, ebx
@@ -87,9 +82,6 @@ xor eax, eax
         // lea esi, gPasswordHash
         mov esi, gptrPasswordHash
 
-
-
-
         //set eax to 0
 
         //store the first value of the password array into al
@@ -105,8 +97,6 @@ xor eax, eax
         //ax = staring_index
 
         add al, cl
-
-
 
         //set ebx to 0
         //ebx is the variable of the loop
@@ -135,6 +125,34 @@ xor eax, eax
             xor dl, byte ptr[eax + esi]
             add byte ptr[ebx + edi], dl
 
+            //Milestone #3
+            
+            xor eax,eax
+            mov edi,gptrKey;
+            //gPasswordHash into esi
+            mov esi,gptrPasswordHash
+            mov al,byte ptr[esi]
+            mov dl,256
+            //MUL dl
+
+            mov bl,byte ptr[esi + 1]
+            add al,bl
+
+            mov edi,eax
+
+            mov ecx,dataLength
+            xor eax,eax
+
+            MAIN_LOOP :
+
+            mov eax,data
+
+            xor byte ptr[eax],bl
+            inc eax
+
+            loop MAIN_LOOP
+            
+            
             //part a of AECDB crypto order
             xor ecx, ecx            //Temp 0 size
             lea ecx, gEncodeTable        //ecx = gdc
@@ -182,6 +200,5 @@ xor eax, eax
             label_EXIT :
         //mov resultA, ebx
     }
-
     return;
 }
