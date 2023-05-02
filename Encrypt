@@ -202,3 +202,181 @@ xor eax, eax
     }
     return;
 }
+
+//MILESTONE 3
+-------------------------------------------------
+#include "Main.h"
+
+// YOU WILL DELETE ALL THIS CODE WHEN YOU DO YOUR PROJECT - THIS IS GIVING YOU EXAMPLES OF HOW TO 
+// ACCESS gPasswordHash AND gKey
+
+void encryptData_03(char *data, int datalength)
+{
+
+	__asm
+	{
+        xor eax, eax
+        //lea esi, gkey
+        mov esi, gptrKey
+
+        // lea esi, gPasswordHash
+        mov esi, gptrPasswordHash
+
+        //set eax to 0
+
+        //store the first value of the password array into al
+        mov al, byte ptr[esi]
+        //shift left the value of ax 8 times
+
+        shl al, 8
+        //set ecx to 0
+        xor ecx, ecx
+        //set the cl value to the password[1] value
+        mov cl, byte ptr[1 + esi]
+        //add the second value of password to ax and ax is now is the index of the file 
+        //ax = staring_index
+        mov dh, byte ptr[esi + 2]
+        shl dh, 8
+        mov cl, byte ptr[esi +3]
+        add dh, ch
+
+        add al, cl
+
+        //set ebx to 0
+        //ebx is the variable of the loop
+        xor ebx, ebx
+        //set ecx to 0
+        xor ecx, ecx
+        // set ecx as the length of the data
+        mov ecx, datalength
+        //if to check if ecx that is the data Length is less or equal 0
+        cmp ecx, 0
+        //ecx-- to reduce the length 
+        sub ecx, 1
+        //CALL THE METHOD TO DECREMENT EBX TO -1 TO RETURN FAILURE 
+        jbe label_EXIT_ZEROL
+
+        
+      
+
+        //set the first data address into edi
+        mov edi, data
+        //set address of key into esi 
+        mov esi, gptrKey
+         add al, dh
+        add esi, eax
+        //loop to go through the entire data array by byte
+        label_LOOP :
+        //set the byte pointer of the sum of ebx + edi into dl 
+        mov dl, byte ptr[ebx + edi]
+            //data[ebx] ^keyfile[the starting index]
+            xor dl, byte ptr[eax + esi]
+            add byte ptr[ebx + edi], dl
+
+            //Milestone #3
+
+           
+
+
+            //part a of AECDB crypto order
+            xor ecx, ecx            //Temp 0 size
+            lea ecx, gEncodeTable        //ecx = gdc
+            mov dl, byte ptr[ecx + edx]    //dl = gDecodeTabe[edx]
+
+            //part e of AECDB crypto order
+            rol dl, 3 // rotate 2 bits right
+
+            //part c of AECDB crypto order
+            mov dh, dl            //Copy dl to dh
+            and dl, 11110000b        //Seperate 4 bytes
+            and dh, 00001111b        //Seperate other 4 bytes
+            stc                //Set the carry flag
+            rcl dl, 6            //Move to the begining of the 8 bytes then rotate 1 more
+            and dl, 11110000b        //clear the top 4 bytes
+            rol dh, 1            //Rotate 1 left for other digit
+            add dl, dh            //Add the digits together
+            xor dh, dh            //Clear the top of the register
+
+            //part d of AECDB crypto order
+            xor dl, 0x62 //invert bits 0,2,4,7
+
+            //part b of AECDB crypto order
+            rcl dl, 4            //reverse bytes
+
+            //ebx+1
+            add ebx, 1
+            //if ebx > ecx finish the loop
+            cmp ebx, ecx
+            //call exit end method to set ebx to 0
+            ja label_EXITE
+            //else go again in the loop
+            jmp label_LOOP
+
+            label_EXIT_ZEROL :
+        // ebx -1 after ebx is length 0
+        sub ebx, 1
+            //call method to exit and set resultA
+            jmp label_EXIT
+
+            label_EXITE :
+        //set ebx to 0
+        xor ebx, ebx
+
+            label_EXIT :
+        //mov resultA, ebx
+    }
+
+	return;
+} // encryptData_01
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// EXAMPLE code to to show how to access global variables
+int encryptData(char *data, int dataLength)
+{
+	int resulti = 0;
+
+	gdebug1 = 0;				// a couple of global variables that could be used for debugging
+	gdebug2 = 0;				// also can have a breakpoint in C code
+
+	// You can not declare any local variables in C, but should use resulti to indicate any errors
+	// Set up the stack frame and assign variables in assembly if you need to do so
+	// access the parameters BEFORE setting up your own stack frame
+	// Also, you cannot use a lot of global variables - work with registers
+
+	__asm {
+		// you will need to reference some of these global variables
+		// (gptrPasswordHash or gPasswordHash), (gptrKey or gkey), gNumRounds
+
+		// simple example that xors 2nd byte of data with 14th byte in the key file
+        xor eax, eax
+        mov edi, gptrKey;
+        //gPasswordHash into esi
+        mov esi, gptrPasswordHash
+            mov al, byte ptr[esi]
+            mov dl, 256
+            //MUL dl
+
+            mov bl, byte ptr[esi + 1]
+            add al, bl
+
+            mov edi, eax
+
+            mov ecx, dataLength
+            xor eax, eax
+
+            MAIN_LOOP :
+
+        mov eax, data
+
+            xor byte ptr[eax], bl
+            inc eax
+
+            loop MAIN_LOOP		// Exclusive-or the 2nd byte of data with the 14th element of the keyfile
+									// NOTE: Keyfile[14] = 0x21, that value changes the case of a letter and flips the LSB
+									// Capital "B" = 0x42 becomes lowercase "c" since 0x42 xor 0x21 = 0x63
+	}
+
+	return resulti;
+} // encryptData
+
+
